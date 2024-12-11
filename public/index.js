@@ -1,71 +1,48 @@
-const postsDiv = document.getElementById("posts");
-
-// サーバーから投稿を取得して表示
-async function fetchPosts() {
-  const response = await fetch("/posts");
-  const posts = await response.json();
-  postsDiv.innerHTML = ""; // 一旦クリア
-  posts.forEach((post) => {
-    displayPost(post);
+document.getElementById("postForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+  
+    // テキスト入力と画像ファイル取得
+    const textInput = document.getElementById("textInput").value;
+    const imageInput = document.getElementById("imageInput").files[0];
+  
+    // 投稿エリアを取得
+    const postsDiv = document.getElementById("posts");
+  
+    // 新しい投稿要素を作成
+    const postDiv = document.createElement("div");
+    postDiv.className = "post";
+  
+    // 削除ボタンを作成
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "削除";
+    deleteButton.className = "delete-btn";
+    deleteButton.addEventListener("click", function () {
+      postsDiv.removeChild(postDiv); // この投稿を削除
+    });
+  
+    // テキスト追加
+    const textParagraph = document.createElement("p");
+    textParagraph.textContent = textInput;
+    postDiv.appendChild(textParagraph);
+  
+    // 画像追加（ある場合）
+    if (imageInput) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const img = document.createElement("img");
+        img.src = reader.result;
+        postDiv.appendChild(img);
+      };
+      reader.readAsDataURL(imageInput);
+    }
+  
+    // 削除ボタンを投稿に追加
+    postDiv.appendChild(deleteButton);
+  
+    // 投稿エリアに追加
+    postsDiv.prepend(postDiv);
+  
+    // フォームリセット
+    document.getElementById("postForm").reset();
   });
-}
-
-// 投稿を表示
-function displayPost(post) {
-  const postDiv = document.createElement("div");
-  postDiv.className = "post";
-  postDiv.dataset.id = post.id;
-
-  const textParagraph = document.createElement("p");
-  textParagraph.textContent = post.text;
-  postDiv.appendChild(textParagraph);
-
-  if (post.image) {
-    const img = document.createElement("img");
-    img.src = post.image;
-    postDiv.appendChild(img);
-  }
-
-  const deleteButton = document.createElement("button");
-  deleteButton.textContent = "削除";
-  deleteButton.className = "delete-btn";
-  deleteButton.addEventListener("click", async () => {
-    await fetch(`/posts/${post.id}`, { method: "DELETE" });
-    fetchPosts(); // 更新
-  });
-
-  postDiv.appendChild(deleteButton);
-  postsDiv.prepend(postDiv);
-}
-
-// 新しい投稿を追加
-document.getElementById("postForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const textInput = document.getElementById("textInput").value;
-  const imageInput = document.getElementById("imageInput").files[0];
-
-  let imageBase64 = null;
-  if (imageInput) {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      imageBase64 = reader.result;
-      await postNewContent(textInput, imageBase64);
-    };
-    reader.readAsDataURL(imageInput);
-  } else {
-    await postNewContent(textInput, null);
-  }
-});
-
-// 新しい投稿をサーバーに送信
-async function postNewContent(text, image) {
-  await fetch("/posts", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text, image }),
-  });
-  fetchPosts(); // 更新
-}
-
-// 初期データをロード
-fetchPosts();
+  
